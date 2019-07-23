@@ -8,11 +8,11 @@ from math import ceil
 _verbose = False		
 
 TARGET_CPU	= 50			# max CPU load we want for our pods
-MAX_PODS		= 10			# max pods to scale into
+MAX_PODS	= 10			# max pods to scale into
 SAMPLES		= 5			# set how many samples (~~seconds) to check before scaling
 
 for key in range(1, len(sys.argv)):
-	if sys.argv[key] == "--verbose":							# check whether we need to output
+	if sys.argv[key] == "--verbose":						# check whether we need to output
 		_verbose = True if int(sys.argv[key+1]) == 1 else False
 	elif sys.argv[key] == "--target-cpu":						# change target cpu
 		TARGET_CPU = int(sys.argv[key+1])
@@ -38,7 +38,7 @@ subprocess.check_output('kubectl scale --replicas=2 deployment php-apache-manual
 while(True):
 	i = timer % SAMPLES		# set our iteration index
 	
-	cpu = 0.0				# reset the summation base
+	cpu = 0.0			# reset the summation base
 	getPods		= subprocess.check_output('kubectl get pods | grep php-apache-manual | cut -d \' \' -f1', shell=True).splitlines()		# extract pod names, by the required deployment
 	podsStatus	= subprocess.check_output('kubectl get pods | grep php-apache-manual | cut -d \' \' -f4', shell=True).splitlines()		# extract pod statuses, by the required deployment
 	
@@ -63,17 +63,17 @@ while(True):
 	if _verbose:
 		print("{}. total CPU usage: {}".format(i, cpu))
 	
-	if i == SAMPLES-1:				# if we're on the last sample - calculate the average load and divide by the target load, to decide how many pods we need
+	if i == SAMPLES-1:			# if we're on the last sample - calculate the average load and divide by the target load, to decide how many pods we need
 		averageLoad = sum(lastSamples) / len(lastSamples)
 		scaledPods  = int(ceil(averageLoad/TARGET_CPU))			# divide current CPU by target CPU needed, round up and convert to natural number
 		
 		if _verbose:
 			print("\t Average CPU load: {}".format(averageLoad))
 		
-		if scaledPods > MAX_PODS:							# don't pass the MAX_PODS allowed
+		if scaledPods > MAX_PODS:					# don't pass the MAX_PODS allowed
 			scaledPods = MAX_PODS
 		
-		if scaledPods < 2:									# don't get below the minimum pods allowed
+		if scaledPods < 2:						# don't get below the minimum pods allowed
 			scaledPods = 2
 		
 		if scaledPods != currentPods:
@@ -81,11 +81,11 @@ while(True):
 				print("pods have scaled from {} to {}".format(currentPods, scaledPods))
 			# scale the pods to the required amount
 			subprocess.check_output('kubectl scale --replicas={} deployment php-apache-manual'.format(int(scaledPods)), shell=True)
-			currentPods = scaledPods		# update the current pods value
+			currentPods = scaledPods				# update the current pods value
 			
-			time.sleep(3)				# sleep extra 3 seconds, so the pods list will get to update
+			time.sleep(3)						# sleep extra 3 seconds, so the pods list will get to update
 		
-		del lastSamples[:]				# clear all the samples before re-summing
+		del lastSamples[:]						# clear all the samples before re-summing
 	
 	timer += 1
-	time.sleep(1)						# sleep for 1 second before doing it again
+	time.sleep(1)								# sleep for 1 second before doing it again
